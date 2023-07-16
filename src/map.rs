@@ -1,7 +1,9 @@
-use std::collections::HashSet;
+use std::cmp::Reverse;
+use std::collections::{BinaryHeap, HashMap, HashSet};
 use std::fmt::{Display, Error, Formatter};
-use petgraph::{Direction as GraphDirection};
-use petgraph::graph::NodeIndex;
+use petgraph::{Direction as GraphDirection, Graph};
+use petgraph::data::FromElements;
+use petgraph::graph::{NodeIndex, UnGraph};
 use crate::path::{Direction, NodeType, Path};
 
 const STARTING_ROOM: (isize, isize) = (0, 0);
@@ -13,8 +15,8 @@ const USER: &str = "🧍";
 
 #[derive(Debug)]
 pub struct Map {
-    rooms: HashSet<(isize, isize)>,
-    doors: HashSet<((isize, isize), (isize, isize))>,
+    pub rooms: HashSet<(isize, isize)>,
+    pub doors: HashSet<((isize, isize), (isize, isize))>,
 }
 
 impl Map {
@@ -24,12 +26,12 @@ impl Map {
             doors: HashSet::new(),
         };
         map.trace_path(path, NodeIndex::new(0), STARTING_ROOM);
+
         map
     }
 
-    fn trace_path(&mut self, path: &Path, path_index: NodeIndex, position: (isize, isize)) {
-        print!("Trace index: {:5}\r", path_index.index());
 
+    fn trace_path(&mut self, path: &Path, path_index: NodeIndex, position: (isize, isize)) {
         let node = &path[path_index];
         let outputs = path.neighbors_directed(path_index, GraphDirection::Outgoing);
 
@@ -55,7 +57,20 @@ impl Map {
     fn add_room(&mut self, from: (isize, isize), to: (isize, isize)) {
         self.rooms.insert(to);
         self.doors.insert((from, to));
-        self.doors.insert((to, from));
+        // self.doors.insert((to, from));
+    }
+
+    pub fn to_graph(&self) -> UnGraph<(isize, isize), ()> {
+        let mut graph = UnGraph::new_undirected();
+        for room in &self.rooms {
+            graph.add_node(*room);
+        }
+        for door in &self.doors {
+            let left = graph.node_indices().find(|index| graph[*index] == door.0).unwrap();
+            let right = graph.node_indices().find(|index| graph[*index] == door.1).unwrap();
+            graph.add_edge(left, right, ());
+        }
+        graph
     }
 }
 

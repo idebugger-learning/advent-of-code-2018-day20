@@ -1,6 +1,6 @@
 use petgraph::Graph;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Direction {
     North,
     South,
@@ -8,7 +8,7 @@ pub enum Direction {
     West,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum NodeType {
     Start,
     End,
@@ -18,6 +18,8 @@ pub enum NodeType {
 pub type Path = Graph<NodeType, ()>;
 
 pub fn parse(input: &str) -> Path {
+    let input = remove_doubler_trick(input);
+
     let mut graph = Graph::new();
     let mut last_indexes = vec![graph.add_node(NodeType::Start)];
     let mut split_points = Vec::new();
@@ -82,4 +84,22 @@ pub fn parse(input: &str) -> Path {
     }
 
     graph
+}
+
+// Replaces all |) in input with simple )
+fn remove_doubler_trick(input: &str) -> String {
+    let mut result = String::new();
+    let mut chars = input.chars();
+    let mut last_char = chars.next().unwrap();
+    result.push(last_char);
+
+    for char in chars {
+        if last_char == '|' && char == ')' {
+            result.pop();
+        }
+        result.push(char);
+        last_char = char;
+    }
+
+    result
 }
